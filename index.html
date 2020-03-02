@@ -147,6 +147,38 @@
 
                 calculateRouteFromAtoB (platform, almacen_tr, terminal, depFormatted);
             }
+            function supuesto3(){
+                 // Datos contenedor
+                var contenedor = {
+                    "tipo": "40HC",
+                    "id": "JLGU1020304"
+                }
+                // Datos almacén 1
+                var almacen_sur = {
+                    "codigo_postal": 30500,
+                    "longitude": -1.2498837,
+                    "latitude" : 38.0861045, 
+                }
+                 // Datos almacén 2
+                var almacen_agri = {
+                    "codigo_postal": 30880,
+                    "longitude": -1.583708,
+                    "latitude" : 37.4215445, 
+                }
+                var depFromSuric = new Date(2020, 03, 06, 08, 30, 00, 0);
+                var depSuricFormatted = depFromSuric.toISOString();
+
+                var depFromAgri = new Date(2020, 03, 06, 12, 00, 00)
+                var depAgriFormatted = depFromAgri.toISOString()
+                
+                var depFromVal = new Date(2020, 03, 08, 14, 00, 00)
+                var depValFormatted = depFromVal.toISOString()
+                //Desde SURICATA a AGRIGULTURA MODERNA
+                calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depAgriFormatted);
+                //Desde AGRICULTURA MODERNA a VALENCIA
+                calculateRouteFromAtoB (platform, almacen_agri, terminal, depValFormatted)
+                
+            }
               
         </script>
 
