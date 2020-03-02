@@ -47,7 +47,7 @@
             // Create the default UI components
             var ui = H.ui.UI.createDefault(map, maptypes);
 
-            function calculateRouteFromAtoB (platform, A, B) {
+            function calculateRouteFromAtoB (platform, A, B, departure) {
                 var router = platform.getRoutingService()
                 var routeRequestParams = {
                     mode: 'fastest;car',
@@ -55,7 +55,8 @@
                     routeattributes : 'waypoints,summary,shape,legs',
                     maneuverattributes: 'direction,action',
                     waypoint0: A['latitude']+','+A['longitude'],
-                    waypoint1: B['latitude']+','+B['longitude']
+                    waypoint1: B['latitude']+','+B['longitude'],
+                    departure: departure
                 };
                 
                 router.calculateRoute(
@@ -80,6 +81,11 @@
                 alert('Can\'t reach the remote server');
             }
 
+            var terminal = {
+                "longitude": -0.3265983,
+                "latitude": 39.4429378
+            }
+
             function supuesto1() {
                 // Datos contenedor
                 var contenedor = {
@@ -98,8 +104,48 @@
                     "longitude": -1.095867,
                     "latitude" : 39.501238,
                 }
+                var departure = new Date(2020, 03, 06, 09, 30, 00, 0);
+                var depFormatted = departure.toISOString();
 
-                calculateRouteFromAtoB (platform, camion, almacen);
+                calculateRouteFromAtoB (platform, camion, almacen, depFormatted);
+            }
+
+            function supuesto1_2() {
+
+                // Datos almacén
+                var almacen = {
+                    "codigo_postal": 28004,
+                    "longitude": -3.398570,
+                    "latitude" : 40.507764, 
+                }
+                
+                var departure = new Date(2020, 03, 06, 14, 00, 00, 0);
+                var depFormatted = departure.toISOString();
+
+                calculateRouteFromAtoB (platform, almacen, terminal, depFormatted);
+            }
+
+            function supuesto2() {
+                // Datos contenedor
+                var contenedor = {
+                    "tipo": "40HC",
+                    "id": "GCLU78901234",
+                    "carga": "Carga ADR - Mercancía Peligrosa"
+                }
+                // Datos almacén
+                var almacen_tr = {
+                    "codigo_postal": 50639,
+                    "longitude": -1.161746,
+                    "latitude" : 41.7640217, 
+                }
+                
+                var departure = new Date(2020, 03, 05, 18, 30, 00, 0);
+                var depFormatted = departure.toISOString();
+
+                var depFromVal = new Date(2020, 03, 06, 20, 00, 00)
+                var depValFormatted = depFromVal.toISOString()
+
+                calculateRouteFromAtoB (platform, almacen_tr, terminal, depFormatted);
             }
               
         </script>
@@ -235,7 +281,6 @@ function addManueversToPanel(route){
     routeInstructionsContainer.appendChild(nodeOL);
 }
 
-supuesto1()
 </script>
     </body>
 </html>
