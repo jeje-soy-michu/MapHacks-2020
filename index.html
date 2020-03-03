@@ -26,6 +26,7 @@
                 'apikey': apiKey
             });
             var summary;
+            var lat,long;
             // Obtain the default map types from the platform object
             var maptypes = platform.createDefaultLayers();
 
@@ -94,6 +95,29 @@
                 console.log(error)
                 alert('Can\'t reach the remote server');
             }
+            function ubicar(){
+              const xhttp = new XMLHttpRequest();
+              var locate;
+              xhttp.open("POST", "https://pos.ls.hereapi.com/positioning/v1/locate?apiKey=JuaPzdCICDyFTMDzllpLj4c1Fpp_MW3LwXzsDClZ4W0", false)
+              xhttp.setRequestHeader('Content-Type','application/json')
+              xhttp.send(JSON.stringify({
+                  "gsm": [{
+                  "mcc": 262,
+                  "mnc": 1,
+                  "lac": 5126,
+                  "cid": 21857
+                }]
+              }))
+
+              locate = JSON.parse(xhttp.responseText)
+              long = JSON.stringify(locate.location.lng)
+              lat = JSON.stringify(locate.location.lat)
+              var truck = new H.map.Marker({lat:lat, lng:long});
+              console.log(JSON.stringify(lat + "," + long))
+              map.addObject(truck);
+
+              }
+
 
             var terminal = {
                 "longitude": -0.3265983,
@@ -122,6 +146,7 @@
                 var depFormatted = departure.toISOString();
                 calculateRouteFromAtoB (platform, camion, almacen, depFormatted);
                 setTimeout(function(){
+                  alert(JSON.stringify(summary))
                   let travel = summary.travelTime * 1000;
                   let arrive = new Date(departure.getTime()+travel)
                   alert("Hora de llegada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes())
@@ -184,11 +209,12 @@
                     "longitude": -1.583708,
                     "latitude" : 37.4215445,
                 }
-                //var depFromVal = new Date(2020, 03, 08, 14, 00, 00)
-                //var depValFormatted = depFromVal.toISOString()
+                var depFromVal = new Date(2020, 03, 08, 14, 00, 00)
+                var depValFormatted = depFromVal.toISOString()
                 var depFromSuric = new Date(2020, 03, 06, 09, 55, 00, 0);
                 var depSuricFormatted = depFromSuric.toISOString();
                 var llegada;
+                calculateRouteFromAtoB (platform, terminal, almacen_sur, depValFormatted);
                 calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depSuricFormatted);
                 setTimeout(function(){
                   let travel = summary.travelTime * 1000;
@@ -199,12 +225,10 @@
                     alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
                   }
                 llegada = arrive;
-                setTimeout(  calculateRouteFromAtoB (platform, almacen_agri, terminal, arrive.toISOString()),1000);
+                setTimeout(calculateRouteFromAtoB (platform, almacen_agri, terminal, arrive.toISOString()),1000);
               },500);
-
-
-
             }
+
 
 
         </script>
