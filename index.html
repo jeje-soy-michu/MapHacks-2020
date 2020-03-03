@@ -16,19 +16,19 @@
             // Definimos el prototipo para convertir un número a un formato de hora: MM:SS
             Number.prototype.toMMSS = function () { return  Math.floor(this / 60)  +' minutes '+ (this % 60)  + ' seconds.'; }
 
-            
+
             var valencia = {
                 "longitude": -0.3773900,
                 "latitude" : 39.4697500,
             }
-            
+
             var platform = new H.service.Platform({
                 'apikey': apiKey
             });
-
+            var summary;
             // Obtain the default map types from the platform object
             var maptypes = platform.createDefaultLayers();
-        
+
             // Instantiate (and display) a map object:
             var map = new H.Map(
                 document.getElementById('map'),
@@ -47,10 +47,11 @@
             // Create the default UI components
             var ui = H.ui.UI.createDefault(map, maptypes);
 
+
             function calculateRouteFromAtoB (platform, A, B, departure) {
                 var router = platform.getRoutingService()
                 var routeRequestParams = {
-                    mode: 'fastest;car',
+                    mode: 'fastest;truck',
                     representation: 'display',
                     routeattributes : 'waypoints,summary,shape,legs',
                     maneuverattributes: 'direction,action',
@@ -58,24 +59,37 @@
                     waypoint1: B['latitude']+','+B['longitude'],
                     departure: departure
                 };
-                
-                router.calculateRoute(
+
+              router.calculateRoute(
                     routeRequestParams,
                     onSuccess,
                     onError
                 );
+
             }
-            
+
             function onSuccess(result) {
                 var route = result.response.route[0];
+                var startMarker = new H.map.Marker({
+                    lat: route.waypoint[0].mappedPosition.latitude,
+                    lng: route.waypoint[0].mappedPosition.longitude
+                  });
+                var endMarker = new H.map.Marker({
+                      lat: route.waypoint[1].mappedPosition.latitude,
+                      lng: route.waypoint[1].mappedPosition.longitude
+                  });
                 addRouteShapeToMap(route);
                 addManueversToMap(route);
 
                 addWaypointsToPanel(route.waypoint);
                 addManueversToPanel(route);
                 addSummaryToPanel(route.summary);
+                map.addObjects([startMarker, endMarker]);
+                summary = route.summary;
+
+
+
             }
-            
             function onError(error) {
                 console.log(error)
                 alert('Can\'t reach the remote server');
@@ -96,7 +110,7 @@
                 var almacen = {
                     "codigo_postal": 28004,
                     "longitude": -3.398570,
-                    "latitude" : 40.507764, 
+                    "latitude" : 40.507764,
                 }
                 // Datos camión
                 var camion = {
@@ -106,8 +120,13 @@
                 }
                 var departure = new Date(2020, 03, 06, 09, 30, 00, 0);
                 var depFormatted = departure.toISOString();
-
                 calculateRouteFromAtoB (platform, camion, almacen, depFormatted);
+                setTimeout(function(){
+                  let travel = summary.travelTime * 1000;
+                  let arrive = new Date(departure.getTime()+travel)
+                  alert("Hora de llegada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes())
+
+                },1000);
             }
 
             function supuesto1_2() {
@@ -116,9 +135,9 @@
                 var almacen = {
                     "codigo_postal": 28004,
                     "longitude": -3.398570,
-                    "latitude" : 40.507764, 
+                    "latitude" : 40.507764,
                 }
-                
+
                 var departure = new Date(2020, 03, 06, 14, 00, 00, 0);
                 var depFormatted = departure.toISOString();
 
@@ -136,9 +155,9 @@
                 var almacen_tr = {
                     "codigo_postal": 50639,
                     "longitude": -1.161746,
-                    "latitude" : 41.7640217, 
+                    "latitude" : 41.7640217,
                 }
-                
+
                 var departure = new Date(2020, 03, 05, 18, 30, 00, 0);
                 var depFormatted = departure.toISOString();
 
@@ -147,7 +166,7 @@
 
                 calculateRouteFromAtoB (platform, almacen_tr, terminal, depFormatted);
             }
-            function supuesto3(){
+            function supuesto3(){   // RUTA DESDE SURICATA HASTA AGRICULTURA MODERNA
                  // Datos contenedor
                 var contenedor = {
                     "tipo": "40HC",
@@ -157,29 +176,37 @@
                 var almacen_sur = {
                     "codigo_postal": 30500,
                     "longitude": -1.2498837,
-                    "latitude" : 38.0861045, 
+                    "latitude" : 38.0861045,
                 }
                  // Datos almacén 2
                 var almacen_agri = {
                     "codigo_postal": 30880,
                     "longitude": -1.583708,
-                    "latitude" : 37.4215445, 
+                    "latitude" : 37.4215445,
                 }
-                var depFromSuric = new Date(2020, 03, 06, 08, 30, 00, 0);
+                //var depFromVal = new Date(2020, 03, 08, 14, 00, 00)
+                //var depValFormatted = depFromVal.toISOString()
+                var depFromSuric = new Date(2020, 03, 06, 09, 55, 00, 0);
                 var depSuricFormatted = depFromSuric.toISOString();
+                var llegada;
+                calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depSuricFormatted);
+                setTimeout(function(){
+                  let travel = summary.travelTime * 1000;
+                  let arrive = new Date(depFromSuric.getTime() + travel);
+                  if(arrive.getHours() < 12){
+                    alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes() +". Proponer al cliente comenzar la carga cuanto antes.")
+                  }else{
+                    alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
+                  }
+                llegada = arrive;
+                setTimeout(  calculateRouteFromAtoB (platform, almacen_agri, terminal, arrive.toISOString()),1000);
+              },500);
 
-                var depFromAgri = new Date(2020, 03, 06, 12, 00, 00)
-                var depAgriFormatted = depFromAgri.toISOString()
-                
-                var depFromVal = new Date(2020, 03, 08, 14, 00, 00)
-                var depValFormatted = depFromVal.toISOString()
-                //Desde SURICATA a AGRIGULTURA MODERNA
-                calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depAgriFormatted);
-                //Desde AGRICULTURA MODERNA a VALENCIA
-                calculateRouteFromAtoB (platform, almacen_agri, terminal, depValFormatted)
-                
+
+
             }
-              
+
+
         </script>
 
 
@@ -207,7 +234,7 @@ function addRouteShapeToMap(route){
     var lineString = new H.geo.LineString(),
         routeShape = route.shape,
         polyline;
-    
+
     routeShape.forEach(function(point) {
         var parts = point.split(',');
         lineString.pushLatLngAlt(parts[0], parts[1]);
@@ -231,7 +258,7 @@ function addManueversToMap(route){
     var svgMarkup = ' ', i, j,
         dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
         group = new  H.map.Group()
-        
+
     // Add a marker for each maneuver
     for (i = 0;  i < route.leg.length; i += 1) {
         for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
@@ -246,13 +273,13 @@ function addManueversToMap(route){
             group.addObject(marker);
         }
     }
-    
+
     group.addEventListener('tap', function (evt) {
         map.setCenter(evt.target.getGeometry());
         openBubble(
             evt.target.getGeometry(), evt.target.instruction);
         }, false);
-        
+
     // Add the maneuvers group to the map
     map.addObject(group);
 }
@@ -264,7 +291,7 @@ function addWaypointsToPanel(waypoints){
     for (i = 0;  i < waypoints.length; i += 1) {
         waypointLabels.push(waypoints[i].label)
     }
-    
+
     nodeH3.textContent = waypointLabels.join(' - ');
 
     routeInstructionsContainer.innerHTML = '';
@@ -316,5 +343,3 @@ function addManueversToPanel(route){
 </script>
     </body>
 </html>
-
-
