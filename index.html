@@ -3,6 +3,9 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <link rel="stylesheet" href="./style.css">
+        <!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">-->
+
         <script src="./credentials.js"></script>
         <script type="text/javascript" charset="utf-8" src="https://js.api.here.com/v3/3.1/mapsjs-core.js"></script>
         <script type="text/javascript" charset="utf-8" src="https://js.api.here.com/v3/3.1/mapsjs-service.js"></script>
@@ -10,8 +13,37 @@
         <script type="text/javascript" charset="utf-8" src="https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"></script>
     </head>
     <body>
-        <div style="width: 640px; height: 480px" id="map"></div>
-        <div id="panel"></div>
+        <div>
+        <!--<div style="float:left; width: 75%; height: 100%; margin-top: 10px">Mapa</div>--> 
+        <!--<img src="mapa.png" style="float:left;width:75%;height:100%;">--> 
+            <div style="float:right; width: 25%; height: 100%; margin-top: 10px; text-align: center">  
+                <form class="container-form" name="searchform">
+                    <!--<nav class="navbar navbar-expand-lg navbar-light bg-light">-->
+                    <input class="form-control-search" name="containers" id= containers type="search" placeholder="Buscar contenedor" aria-label="Search" list="container-list">
+
+                    <button class="search-container-button" type="button" onclick="searchContainer()">Buscar</button>
+
+                    <datalist id="container-list">
+
+                        <option id="JCLU1234564" value="JCLU1234564" data-tipo-container="40HC">
+                        <option id="GCLU78901234" value="GCLU78901234" data-tipo-container="40HC">
+                        <option id="JLGU1020304"value="JLGU1020304" data-tipo-container="40HC">
+
+                    </datalist>
+
+                </form>
+                <!--</nav>-->
+            </div>
+        </div>
+
+        <!--****************************************************************-->
+        <!--INTENTAR PONER EL <DIV> DEL MAPA DENTRO DEL <DIV> DEL FORMULARIO-->
+        <!--****************************************************************-->
+        <div style="float:left; width: 75%; height: 100%" id="map"></div>   
+
+        <!--<div style="width: 75%; height: 100%" id="map"></div> -->  
+        
+        <!--<div id="panel"></div> -->
         <script>
             // Definimos el prototipo para convertir un número a un formato de hora: MM:SS
             Number.prototype.toMMSS = function () { return  Math.floor(this / 60)  +' minutes '+ (this % 60)  + ' seconds.'; }
@@ -21,7 +53,78 @@
                 "longitude": -0.3773900,
                 "latitude" : 39.4697500,
             }
+
+            var terminal = {
+                "longitude": -0.3265983,
+                "latitude": 39.4429378
+            }
+
+            //SUPUESTO 1
+            // Datos contenedor
+            var contenedor1 = {
+                "tipo": "40HC",
+                "id": "JCLU1234564"
+            }
+            // Datos almacén
+            var almacen1 = {
+                "codigo_postal": 28004,
+                "longitude": -3.398570,
+                "latitude" : 40.507764, 
+            }
+            // Datos camión
+            var camion1 = {
+                "codigo_postal": 46340,
+                "longitude": -1.095867,
+                "latitude" : 39.501238,
+            }
+
             
+            var sup1 = new Array(contenedor1, almacen1, camion1)
+                
+
+            //¿¿¿¿¿¿¿¿¿ SUPUESTO 1.2 ??????????
+
+
+            //SUPUESTO 2
+            // Datos contenedor
+            var contenedor2 = {
+                    "tipo": "40HC",
+                    "id": "GCLU78901234",
+                    "carga": "Carga ADR - Mercancía Peligrosa"
+            }
+            // Datos almacén
+            var almacen_tr2 = {
+                    "codigo_postal": 50639,
+                    "longitude": -1.161746,
+                    "latitude" : 41.7640217,
+            }
+
+            var sup2 = new Array(contenedor2, almacen_tr2)
+            
+            //SUPUESTO 3
+            // Datos contenedor
+            var contenedor3 = {
+                "tipo": "40HC",
+                "id": "JLGU1020304"
+            }
+            // Datos almacén 1
+            var almacen_sur3 = {
+                "codigo_postal": 30500,
+                "longitude": -1.2498837,
+                "latitude" : 38.0861045,
+            }
+            // Datos almacén 2
+            var almacen_agri3 = {
+                "codigo_postal": 30880,
+                "longitude": -1.583708,
+                "latitude" : 37.4215445,
+            }
+
+            var sup3 = new Array(contenedor3, almacen_sur3, almacen_agri3)
+
+
+
+    
             var platform = new H.service.Platform({
                 'apikey': apiKey
             });
@@ -79,7 +182,8 @@
                 console.log(error)
                 alert('Can\'t reach the remote server');
             }
-
+            
+            /*
             function supuesto1() {
                 // Datos contenedor
                 var contenedor = {
@@ -101,143 +205,179 @@
 
                 calculateRouteFromAtoB (platform, camion, almacen);
             }
+
+            */
+
+            
+
+            
+
+
+            function searchContainer() {
+
+                var container=document.getElementById("containers").value;
+                //SUPUESTO 1
+                if(container==window.sup1[0].id){
+                    calculateRouteFromAtoB (platform, window.sup1[1], window.sup1[2]); //<-- NO FUNCIONA
+                }
+
+                //¿¿SUPUESTO 1.2??
+
+                //SUPUESTO 2
+                if(container==window.sup2[0].id){
+                    
+                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 2
+                    //VARIABLES GLOBALES DEFINIDAS ARRIBA INCLUÍDA TERMINAL
+                }
+                //SUPUESTO 3
+                if(container==window.sup3[0].id){
+
+                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 3
+                }   
+
+            }
+
+            
+
+            
               
         </script>
 
+        <script>
+
+            var routeInstructionsContainer = document.getElementById('panel');
+
+            var bubble;
+            function openBubble(position, text){
+                if(!bubble){
+                    bubble =  new H.ui.InfoBubble(position,
+                        // The FO property holds the province name.
+                        {content: text});
+                        ui.addBubble(bubble);
+                } else {
+                    bubble.setPosition(position);
+                    bubble.setContent(text);
+                    bubble.open();
+                }
+            }
+
+            function addRouteShapeToMap(route){
+                var lineString = new H.geo.LineString(),
+                    routeShape = route.shape,
+                    polyline;
+                
+                routeShape.forEach(function(point) {
+                    var parts = point.split(',');
+                    lineString.pushLatLngAlt(parts[0], parts[1]);
+                });
+
+                polyline = new H.map.Polyline(lineString, {
+                    style: {
+                        lineWidth: 4,
+                        strokeColor: 'rgba(0, 128, 255, 0.7)'
+                    }
+                });
+                // Add the polyline to the map
+                map.addObject(polyline);
+                // And zoom to its bounding rectangle
+                map.getViewModel().setLookAtData({
+                    bounds: polyline.getBoundingBox()
+                });
+            }
+
+            function addManueversToMap(route){
+                var svgMarkup = ' ', i, j,
+                    dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
+                    group = new  H.map.Group()
+                    
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        // Add a marker to the maneuvers group
+                        var marker =  new H.map.Marker({
+                            lat: maneuver.position.latitude,
+                            lng: maneuver.position.longitude} ,
+                            {icon: dotIcon});
+                        marker.instruction = maneuver.instruction;
+                        group.addObject(marker);
+                    }
+                }
+                
+                group.addEventListener('tap', function (evt) {
+                    map.setCenter(evt.target.getGeometry());
+                    openBubble(
+                        evt.target.getGeometry(), evt.target.instruction);
+                    }, false);
+                    
+                // Add the maneuvers group to the map
+                map.addObject(group);
+            }
+
+            function addWaypointsToPanel(waypoints){
+                var nodeH3 = document.createElement('h3'),
+                    waypointLabels = [],
+                    i;
+                for (i = 0;  i < waypoints.length; i += 1) {
+                    waypointLabels.push(waypoints[i].label)
+                }
+                
+                nodeH3.textContent = waypointLabels.join(' - ');
+
+                routeInstructionsContainer.innerHTML = '';
+                routeInstructionsContainer.appendChild(nodeH3);
+            }
+
+            function addSummaryToPanel(summary){
+                var summaryDiv = document.createElement('div'),
+                    content = '';
+                    content += 'Total distance: ' + summary.distance  + 'm.';
+                    content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
 
 
+                summaryDiv.style.fontSize = 'small';
+                summaryDiv.style.marginLeft ='5%';
+                summaryDiv.style.marginRight ='5%';
+                summaryDiv.innerHTML = content;
+                routeInstructionsContainer.appendChild(summaryDiv);
+            }
 
-<script>
+            function addManueversToPanel(route){
+                var nodeOL = document.createElement('ol'), i, j;
 
-var routeInstructionsContainer = document.getElementById('panel');
+                nodeOL.style.fontSize = 'small';
+                nodeOL.style.marginLeft ='5%';
+                nodeOL.style.marginRight ='5%';
+                nodeOL.className = 'directions';
 
-var bubble;
-function openBubble(position, text){
-    if(!bubble){
-        bubble =  new H.ui.InfoBubble(position,
-            // The FO property holds the province name.
-            {content: text});
-            ui.addBubble(bubble);
-    } else {
-        bubble.setPosition(position);
-        bubble.setContent(text);
-        bubble.open();
-    }
-}
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        var li = document.createElement('li'),
+                            spanArrow = document.createElement('span'),
+                            spanInstruction = document.createElement('span');
 
-function addRouteShapeToMap(route){
-    var lineString = new H.geo.LineString(),
-        routeShape = route.shape,
-        polyline;
-    
-    routeShape.forEach(function(point) {
-        var parts = point.split(',');
-        lineString.pushLatLngAlt(parts[0], parts[1]);
-    });
+                        spanArrow.className = 'arrow '  + maneuver.action;
+                        spanInstruction.innerHTML = maneuver.instruction;
+                        li.appendChild(spanArrow);
+                        li.appendChild(spanInstruction);
 
-    polyline = new H.map.Polyline(lineString, {
-        style: {
-            lineWidth: 4,
-            strokeColor: 'rgba(0, 128, 255, 0.7)'
-        }
-    });
-    // Add the polyline to the map
-    map.addObject(polyline);
-    // And zoom to its bounding rectangle
-    map.getViewModel().setLookAtData({
-        bounds: polyline.getBoundingBox()
-    });
-}
+                        nodeOL.appendChild(li);
+                    }
+                }
+                routeInstructionsContainer.appendChild(nodeOL);
+            }
 
-function addManueversToMap(route){
-    var svgMarkup = ' ', i, j,
-        dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
-        group = new  H.map.Group()
-        
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            // Add a marker to the maneuvers group
-            var marker =  new H.map.Marker({
-                lat: maneuver.position.latitude,
-                lng: maneuver.position.longitude} ,
-                {icon: dotIcon});
-            marker.instruction = maneuver.instruction;
-            group.addObject(marker);
-        }
-    }
-    
-    group.addEventListener('tap', function (evt) {
-        map.setCenter(evt.target.getGeometry());
-        openBubble(
-            evt.target.getGeometry(), evt.target.instruction);
-        }, false);
-        
-    // Add the maneuvers group to the map
-    map.addObject(group);
-}
-
-function addWaypointsToPanel(waypoints){
-    var nodeH3 = document.createElement('h3'),
-        waypointLabels = [],
-        i;
-    for (i = 0;  i < waypoints.length; i += 1) {
-        waypointLabels.push(waypoints[i].label)
-    }
-    
-    nodeH3.textContent = waypointLabels.join(' - ');
-
-    routeInstructionsContainer.innerHTML = '';
-    routeInstructionsContainer.appendChild(nodeH3);
-}
-
-function addSummaryToPanel(summary){
-    var summaryDiv = document.createElement('div'),
-        content = '';
-        content += 'Total distance: ' + summary.distance  + 'm.';
-        content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
-
-
-    summaryDiv.style.fontSize = 'small';
-    summaryDiv.style.marginLeft ='5%';
-    summaryDiv.style.marginRight ='5%';
-    summaryDiv.innerHTML = content;
-    routeInstructionsContainer.appendChild(summaryDiv);
-}
-
-function addManueversToPanel(route){
-    var nodeOL = document.createElement('ol'), i, j;
-
-    nodeOL.style.fontSize = 'small';
-    nodeOL.style.marginLeft ='5%';
-    nodeOL.style.marginRight ='5%';
-    nodeOL.className = 'directions';
-
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            var li = document.createElement('li'),
-                spanArrow = document.createElement('span'),
-                spanInstruction = document.createElement('span');
-
-            spanArrow.className = 'arrow '  + maneuver.action;
-            spanInstruction.innerHTML = maneuver.instruction;
-            li.appendChild(spanArrow);
-            li.appendChild(spanInstruction);
-
-            nodeOL.appendChild(li);
-        }
-    }
-    routeInstructionsContainer.appendChild(nodeOL);
-}
-
-supuesto1()
-</script>
+            //supuesto1()
+        </script>
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     </body>
+
 </html>
 
 
