@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <link rel="stylesheet" href="./style.css">
-        <!--<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">-->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
         <script src="./credentials.js"></script>
         <script type="text/javascript" charset="utf-8" src="https://js.api.here.com/v3/3.1/mapsjs-core.js"></script>
@@ -33,6 +33,7 @@
 
                 </form>
                 <!--</nav>-->
+                <div id="panel"></div>
             </div>
         </div>
 
@@ -47,7 +48,6 @@
         <script>
             // Definimos el prototipo para convertir un número a un formato de hora: MM:SS
             Number.prototype.toMMSS = function () { return  Math.floor(this / 60)  +' minutes '+ (this % 60)  + ' seconds.'; }
-
 
             var valencia = {
                 "longitude": -0.3773900,
@@ -78,12 +78,7 @@
                 "latitude" : 39.501238,
             }
 
-            
             var sup1 = new Array(contenedor1, almacen1, camion1)
-                
-
-            //¿¿¿¿¿¿¿¿¿ SUPUESTO 1.2 ??????????
-
 
             //SUPUESTO 2
             // Datos contenedor
@@ -122,9 +117,6 @@
 
             var sup3 = new Array(contenedor3, almacen_sur3, almacen_agri3)
 
-
-
-    
             var platform = new H.service.Platform({
                 'apikey': apiKey
             });
@@ -157,7 +149,13 @@
                 map.removeObjects(map.getObjects ())
             }
 
-            function calculateRouteFromAtoB (platform, A, B, departure) {
+            defaultColors = {
+                red: 0,
+                green: 127,
+                blue: 255
+            }
+
+            function calculateRouteFromAtoB (platform, A, B, departure, lineColors=defaultColors) {
                 var router = platform.getRoutingService()
                 var routeRequestParams = {
                     mode: 'fastest;truck',
@@ -171,85 +169,88 @@
 
               router.calculateRoute(
                     routeRequestParams,
-                    onSuccess,
+                    getOnSuccess(lineColors),
                     onError
                 );
 
             }
 
-            function onSuccess(result) {
-              var route,
-              routeShape,
-              startPoint,
-              endPoint,
-              linestring;
-            if(result.response.route) {
+            function getOnSuccess(lineColors=defaultColors){
+                return function onSuccess(result) {
+                var route,
+                routeShape,
+                startPoint,
+                endPoint,
+                linestring;
+                if(result.response.route) {
 
-              route = result.response.route[0];
+                route = result.response.route[0];
 
-              routeShape = route.shape;
-
-
-              linestring = new H.geo.LineString();
+                routeShape = route.shape;
 
 
-              routeShape.forEach(function(point) {
-                var parts = point.split(',');
-                linestring.pushLatLngAlt(parts[0], parts[1]);
-              });
-
-              // Retrieve the mapped positions of the requested waypoints:
-              startPoint = route.waypoint[0].mappedPosition;
-              endPoint = route.waypoint[1].mappedPosition;
+                linestring = new H.geo.LineString();
 
 
-              var routeLine = new H.map.Polyline(linestring, {
-              style: { strokeColor: 'blue', lineWidth: 3 }
-              });
+                routeShape.forEach(function(point) {
+                    var parts = point.split(',');
+                    linestring.pushLatLngAlt(parts[0], parts[1]);
+                });
 
-// Create a marker for the start point:
-              var startMarker = new H.map.Marker({
-                lat: startPoint.latitude,
-                lng: startPoint.longitude
-              });
+                // Retrieve the mapped positions of the requested waypoints:
+                startPoint = route.waypoint[0].mappedPosition;
+                endPoint = route.waypoint[1].mappedPosition;
 
-              var endMarker = new H.map.Marker({
-                lat: endPoint.latitude,
-                lng: endPoint.longitude
-              });
 
-              map.getViewModel().setLookAtData({bounds: routeLine.getBoundingBox()});
-              }
-              var routeOutline = new H.map.Polyline(linestring, {
-              style: {
-                lineWidth: 10,
-                strokeColor: 'rgba(0, 128, 255, 0.7)',
-                lineTailCap: 'arrow-tail',
-                lineHeadCap: 'arrow-head'
-              }
-              });
-              // Create a patterned polyline:
-              var routeArrows = new H.map.Polyline(linestring, {
-                style: {
-                  lineWidth: 10,
-                  fillColor: 'white',
-                  strokeColor: 'rgba(255, 255, 255, 1)',
-                  lineDash: [0, 2],
-                  lineTailCap: 'arrow-tail',
-                  lineHeadCap: 'arrow-head' }
+                var routeLine = new H.map.Polyline(linestring, {
+                style: { strokeColor: 'blue', lineWidth: 3 }
+                });
+
+                // Create a marker for the start point:
+                var startMarker = new H.map.Marker({
+                    lat: startPoint.latitude,
+                    lng: startPoint.longitude
+                });
+
+                var endMarker = new H.map.Marker({
+                    lat: endPoint.latitude,
+                    lng: endPoint.longitude
+                });
+
+                map.getViewModel().setLookAtData({bounds: routeLine.getBoundingBox()});
                 }
-              );
-                var routeLine = new H.map.Group();
-                map.addObjects([routeLine, startMarker, endMarker]);
-                routeLine.addObjects([routeOutline, routeArrows]);
-                addRouteShapeToMap(route);
-                addManueversToMap(route);
+                var routeOutline = new H.map.Polyline(linestring, {
+                style: {
+                    lineWidth: 10,
+                    strokeColor: 'rgba(0, 128, 255, 0.7)',
+                    lineTailCap: 'arrow-tail',
+                    lineHeadCap: 'arrow-head'
+                }
+                });
+                // Create a patterned polyline:
+                var routeArrows = new H.map.Polyline(linestring, {
+                    style: {
+                    lineWidth: 10,
+                    fillColor: 'white',
+                    strokeColor: 'rgba(255, 255, 255, 1)',
+                    lineDash: [0, 2],
+                    lineTailCap: 'arrow-tail',
+                    lineHeadCap: 'arrow-head' }
+                    }
+                );
+                    var routeLine = new H.map.Group();
+                    map.addObjects([routeLine, startMarker, endMarker]);
+                    routeLine.addObjects([routeOutline, routeArrows]);
+                    addRouteShapeToMap(route, lineColors.red, lineColors.green, lineColors.blue);
+                    addManueversToMap(route);
 
-                addWaypointsToPanel(route.waypoint);
-                addManueversToPanel(route);
-                addSummaryToPanel(route.summary);
-                summary = route.summary;
+                    //addWaypointsToPanel(route.waypoint);
+                    //addManueversToPanel(route);
+                    addSummaryToPanel(route.summary);
+                    summary = route.summary;
+                }
             }
+            
             function onError(error) {
                 console.log(error)
                 alert('Can\'t reach the remote server');
@@ -303,61 +304,51 @@
                 }
                 var departure = new Date(2020, 03, 06, 09, 30, 00, 0);
                 var depFormatted = departure.toISOString();
+                colors = {
+                    red: 0,
+                    green: 255,
+                    blue: 255
+                }
                 calculateRouteFromAtoB (platform, camion, almacen, depFormatted);
                 setTimeout(function(){
                   let travel = summary.travelTime * 1000;
                   let arrive = new Date(departure.getTime()+travel)
                   alert("Hora de llegada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes())
-
-                },1000);
-            }
-
-            
-
-            
-
-
-            function searchContainer() {
-
-                var container=document.getElementById("containers").value;
-                //SUPUESTO 1
-                if(container==window.sup1[0].id){
-                    calculateRouteFromAtoB (platform, window.sup1[1], window.sup1[2]); //<-- NO FUNCIONA
-                }
-
-                //¿¿SUPUESTO 1.2??
-
-                //SUPUESTO 2
-                if(container==window.sup2[0].id){
-                    
-                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 2
-                    //VARIABLES GLOBALES DEFINIDAS ARRIBA INCLUÍDA TERMINAL
-                }
-                //SUPUESTO 3
-                if(container==window.sup3[0].id){
-
-                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 3
-                }   
-
-            }
-
-            
-
-            
-              
-            function supuesto1_2() {
-
-                // Datos almacén
+                  // Datos almacén
                 var almacen = {
                     "codigo_postal": 28004,
                     "longitude": -3.398570,
                     "latitude" : 40.507764,
                 }
 
-                var departure = new Date(2020, 03, 06, 14, 00, 00, 0);
-                var depFormatted = departure.toISOString();
+                var departure2 = new Date(2020, 03, 06, 14, 00, 00, 0);
+                var depFormatted2 = departure2.toISOString();
 
-                calculateRouteFromAtoB (platform, almacen, terminal, depFormatted);
+                setTimeout(function(){calculateRouteFromAtoB (platform, almacen, terminal, depFormatted2, colors);}, 3000)
+                }, 1500);
+            }
+
+            function searchContainer() {
+
+                var container=document.getElementById("containers").value;
+                //SUPUESTO 1
+                if(container==window.sup1[0].id){
+                    supuesto1()
+                }
+
+                //SUPUESTO 2
+                if(container==window.sup2[0].id){
+                    
+                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 2
+                    //VARIABLES GLOBALES DEFINIDAS ARRIBA INCLUÍDA TERMINAL
+                    supuesto2()
+                }
+                //SUPUESTO 3
+                if(container==window.sup3[0].id){
+                    //INSERTAR AQUÍ CÓDIGO SUPUESTO 3
+                    supuesto3()
+                }   
+
             }
 
             function supuesto2() {
@@ -380,7 +371,12 @@
                 var depFromVal = new Date(2020, 03, 05, 13, 00, 00)
                 var depValFormatted = depFromVal.toISOString()
                 var router = platform.getRoutingService();
-                calculateRouteFromAtoB (platform, terminal, almacen_tr, depValFormatted)
+                colors = {
+                    red: 255,
+                    green: 0,
+                    blue: 0
+                }
+                calculateRouteFromAtoB (platform, terminal, almacen_tr, depValFormatted, colors)
                 var xhttp = new XMLHttpRequest();
                 xhttp.open("GET","http://cre.api.here.com/2/overlays/upload.json?map_name=OVERLAYBLOCKROAD&overlay_spec=%5B%7B%22op%22:%22override%22,%22shape%22:%5B%5B39.455974,-0.331510%5D,%5B39.455539,-0.331100%5D%5D,%22layer%22:%22LINK_ATTRIBUTE_FCN%22,%22data%22:%7B%22VEHICLE_TYPES%22:%22truck%22%7D%7D%5D&storage=readonly&app_id=m125qa2BC3o5s4U8xmkj&app_code=gTNemEWUyC4PLErdFvvpew",false)
                 xhttp.send()
@@ -395,7 +391,7 @@
                  waypoint1: '39.4429378,-0.3265983',
                  departure: depValFormatted
                };
-              router.calculateRoute(routePar,onSuccess,onError)
+              router.calculateRoute(routePar,getOnSuccess(),onError)
               //  console.log(res)
 
             }
@@ -423,19 +419,36 @@
                 var depFromSuric = new Date(2020, 03, 06, 09, 55, 00, 0);
                 var depSuricFormatted = depFromSuric.toISOString();
                 var llegada;
-                calculateRouteFromAtoB (platform, terminal, almacen_sur, depValFormatted);
-                calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depSuricFormatted);
+                colors = {
+                    red: 0,
+                    green: 255,
+                    blue: 255
+                }
+                calculateRouteFromAtoB (platform, terminal, almacen_sur, depValFormatted, colors);
+                colors = {
+                    red: 0,
+                    green: 127,
+                    blue: 255
+                }
                 setTimeout(function(){
-                  let travel = summary.travelTime * 1000;
-                  let arrive = new Date(depFromSuric.getTime() + travel);
-                  if(arrive.getHours() < 12){
-                    alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes() +". Proponer al cliente comenzar la carga cuanto antes.")
-                  }else{
-                    alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
-                  }
-                llegada = arrive;
-                setTimeout(calculateRouteFromAtoB (platform, almacen_agri, terminal, arrive.toISOString()),1000);
-              },500);
+                    calculateRouteFromAtoB (platform, almacen_sur, almacen_agri, depSuricFormatted, colors);
+                    setTimeout(function() {
+                        let travel = summary.travelTime * 1000;
+                        let arrive = new Date(depFromSuric.getTime() + travel);
+                        if(arrive.getHours() < 12){
+                            alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes() +". Proponer al cliente comenzar la carga cuanto antes.")
+                        }else{
+                            alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
+                        }
+                        llegada = arrive;
+                        colors = {
+                            red: 0,
+                            green: 0,
+                            blue: 255
+                        }
+                        setTimeout(calculateRouteFromAtoB (platform, almacen_agri, terminal, arrive.toISOString(), colors),1000);
+                    }, 3000);
+                }, 3000)
             }
 
         </script>
@@ -458,7 +471,7 @@
                 }
             }
 
-function addRouteShapeToMap(route, red=0, green=0, blue=255, alpha=.7){
+            function addRouteShapeToMap(route, red=0, green=0, blue=255, alpha=.7){
                 var lineString = new H.geo.LineString(),
                     routeShape = route.shape,
                     polyline;
@@ -483,94 +496,94 @@ function addRouteShapeToMap(route, red=0, green=0, blue=255, alpha=.7){
             }
 
 
-function addManueversToMap(route){
-    var svgMarkup = ' ', i, j,
-        dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
-        group = new  H.map.Group()
+            function addManueversToMap(route){
+                var svgMarkup = ' ', i, j,
+                    dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
+                    group = new  H.map.Group()
 
 
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            // Add a marker to the maneuvers group
-            var marker =  new H.map.Marker({
-                lat: maneuver.position.latitude,
-                lng: maneuver.position.longitude} ,
-                {icon: dotIcon});
-            marker.instruction = maneuver.instruction;
-            group.addObject(marker);
-        }
-    }
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        // Add a marker to the maneuvers group
+                        var marker =  new H.map.Marker({
+                            lat: maneuver.position.latitude,
+                            lng: maneuver.position.longitude} ,
+                            {icon: dotIcon});
+                        marker.instruction = maneuver.instruction;
+                        group.addObject(marker);
+                    }
+                }
 
-    group.addEventListener('tap', function (evt) {
-        map.setCenter(evt.target.getGeometry());
-        openBubble(
-            evt.target.getGeometry(), evt.target.instruction);
-        }, false);
+                group.addEventListener('tap', function (evt) {
+                    map.setCenter(evt.target.getGeometry());
+                    openBubble(
+                        evt.target.getGeometry(), evt.target.instruction);
+                    }, false);
 
-    // Add the maneuvers group to the map
-    map.addObject(group);
-}
+                // Add the maneuvers group to the map
+                map.addObject(group);
+            }
 
-function addWaypointsToPanel(waypoints){
-    var nodeH3 = document.createElement('h3'),
-        waypointLabels = [],
-        i;
-    for (i = 0;  i < waypoints.length; i += 1) {
-        waypointLabels.push(waypoints[i].label)
-    }
+            function addWaypointsToPanel(waypoints){
+                var nodeH3 = document.createElement('h3'),
+                    waypointLabels = [],
+                    i;
+                for (i = 0;  i < waypoints.length; i += 1) {
+                    waypointLabels.push(waypoints[i].label)
+                }
 
-    nodeH3.textContent = waypointLabels.join(' - ');
+                nodeH3.textContent = waypointLabels.join(' - ');
 
-    routeInstructionsContainer.innerHTML = '';
-    routeInstructionsContainer.appendChild(nodeH3);
-}
+                routeInstructionsContainer.innerHTML = '';
+                routeInstructionsContainer.appendChild(nodeH3);
+            }
 
-function addSummaryToPanel(summary){
-    var summaryDiv = document.createElement('div'),
-        content = '';
-        content += 'Total distance: ' + summary.distance  + 'm.';
-        content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
+            function addSummaryToPanel(summary){
+                var summaryDiv = document.createElement('div'),
+                    content = '';
+                    content += 'Total distance: ' + summary.distance  + 'm.';
+                    content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
 
 
-    summaryDiv.style.fontSize = 'small';
-    summaryDiv.style.marginLeft ='5%';
-    summaryDiv.style.marginRight ='5%';
-    summaryDiv.innerHTML = content;
-    routeInstructionsContainer.appendChild(summaryDiv);
-}
+                summaryDiv.style.fontSize = 'small';
+                summaryDiv.style.marginLeft ='5%';
+                summaryDiv.style.marginRight ='5%';
+                summaryDiv.innerHTML = content;
+                routeInstructionsContainer.innerHTML = '';
+                routeInstructionsContainer.appendChild(summaryDiv);
+            }
 
-function addManueversToPanel(route){
-    var nodeOL = document.createElement('ol'), i, j;
+            function addManueversToPanel(route){
+                var nodeOL = document.createElement('ol'), i, j;
 
-    nodeOL.style.fontSize = 'small';
-    nodeOL.style.marginLeft ='5%';
-    nodeOL.style.marginRight ='5%';
-    nodeOL.className = 'directions';
+                nodeOL.style.fontSize = 'small';
+                nodeOL.style.marginLeft ='5%';
+                nodeOL.style.marginRight ='5%';
+                nodeOL.className = 'directions';
 
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            var li = document.createElement('li'),
-                spanArrow = document.createElement('span'),
-                spanInstruction = document.createElement('span');
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        var li = document.createElement('li'),
+                            spanArrow = document.createElement('span'),
+                            spanInstruction = document.createElement('span');
 
-            spanArrow.className = 'arrow '  + maneuver.action;
-            spanInstruction.innerHTML = maneuver.instruction;
-            li.appendChild(spanArrow);
-            li.appendChild(spanInstruction);
+                        spanArrow.className = 'arrow '  + maneuver.action;
+                        spanInstruction.innerHTML = maneuver.instruction;
+                        li.appendChild(spanArrow);
+                        li.appendChild(spanInstruction);
 
-            nodeOL.appendChild(li);
-        }
-    }
-    routeInstructionsContainer.appendChild(nodeOL);
-}
-
-</script>
+                        nodeOL.appendChild(li);
+                    }
+                }
+                routeInstructionsContainer.appendChild(nodeOL);
+            }
+        </script>
         <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
