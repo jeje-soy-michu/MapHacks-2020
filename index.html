@@ -16,7 +16,6 @@
             // Definimos el prototipo para convertir un número a un formato de hora: MM:SS
             Number.prototype.toMMSS = function () { return  Math.floor(this / 60)  +' minutes '+ (this % 60)  + ' seconds.'; }
 
-
             var valencia = {
                 "longitude": -0.3773900,
                 "latitude" : 39.4697500,
@@ -25,6 +24,7 @@
             var platform = new H.service.Platform({
                 'apikey': apiKey
             });
+
             var summary;
             var lat,long;
             // Obtain the default map types from the platform object
@@ -48,8 +48,13 @@
             // Create the default UI components
             var ui = H.ui.UI.createDefault(map, maptypes);
 
+            defaultColors = {
+                red: 0,
+                green: 123,
+                blue: 255
+            }
 
-            function calculateRouteFromAtoB (platform, A, B, departure) {
+            function calculateRouteFromAtoB (platform, A, B, departure, lineColor=defaultColors) {
                 var router = platform.getRoutingService()
                 var routeRequestParams = {
                     mode: 'fastest;truck',
@@ -63,34 +68,33 @@
 
               router.calculateRoute(
                     routeRequestParams,
-                    onSuccess,
+                    generateOnSuccess(lineColor.red, lineColor.green, lineColor.blue),
                     onError
                 );
 
             }
+            function generateOnSuccess(red, green, blue) {
+                return function onSuccess(result) {
+                    var route = result.response.route[0];
+                    var startMarker = new H.map.Marker({
+                        lat: route.waypoint[0].mappedPosition.latitude,
+                        lng: route.waypoint[0].mappedPosition.longitude
+                    });
+                    var endMarker = new H.map.Marker({
+                        lat: route.waypoint[1].mappedPosition.latitude,
+                        lng: route.waypoint[1].mappedPosition.longitude
+                    });
+                    addRouteShapeToMap(route, red=red, green=green, blue=blue);
+                    addManueversToMap(route);
 
-            function onSuccess(result) {
-                var route = result.response.route[0];
-                var startMarker = new H.map.Marker({
-                    lat: route.waypoint[0].mappedPosition.latitude,
-                    lng: route.waypoint[0].mappedPosition.longitude
-                  });
-                var endMarker = new H.map.Marker({
-                      lat: route.waypoint[1].mappedPosition.latitude,
-                      lng: route.waypoint[1].mappedPosition.longitude
-                  });
-                addRouteShapeToMap(route);
-                addManueversToMap(route);
-
-                addWaypointsToPanel(route.waypoint);
-                addManueversToPanel(route);
-                addSummaryToPanel(route.summary);
-                map.addObjects([startMarker, endMarker]);
-                summary = route.summary;
-
-
-
+                    addWaypointsToPanel(route.waypoint);
+                    addManueversToPanel(route);
+                    addSummaryToPanel(route.summary);
+                    map.addObjects([startMarker, endMarker]);
+                    summary = route.summary;
+                }
             }
+            
             function onError(error) {
                 console.log(error)
                 alert('Can\'t reach the remote server');
@@ -98,15 +102,15 @@
             function ubicar(){
               const xhttp = new XMLHttpRequest();
               var locate;
-              xhttp.open("POST", "https://pos.ls.hereapi.com/positioning/v1/locate?apiKey=JuaPzdCICDyFTMDzllpLj4c1Fpp_MW3LwXzsDClZ4W0", false)
+              xhttp.open("POST", "https://pos.ls.hereapi.com/positioning/v1/locate?apiKey=" + apiKey, false)
               xhttp.setRequestHeader('Content-Type','application/json')
               xhttp.send(JSON.stringify({
                   "gsm": [{
-                  "mcc": 262,
-                  "mnc": 1,
-                  "lac": 5126,
-                  "cid": 21857
-                }]
+                    "mcc": 262,
+                    "mnc": 1,
+                    "lac": 5126,
+                    "cid": 21857
+                    }]
               }))
 
               locate = JSON.parse(xhttp.responseText)
@@ -145,13 +149,15 @@
                 var departure = new Date(2020, 03, 06, 09, 30, 00, 0);
                 var depFormatted = departure.toISOString();
                 calculateRouteFromAtoB (platform, camion, almacen, depFormatted);
+
+                // TODO: en vez de esperar un tiempo X deberiamos de poner un listener para esperar el mensaje
                 setTimeout(function(){
                   alert(JSON.stringify(summary))
                   let travel = summary.travelTime * 1000;
                   let arrive = new Date(departure.getTime()+travel)
                   alert("Hora de llegada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes())
 
-                },1000);
+                }, 5000);
             }
 
             function supuesto1_2() {
@@ -232,138 +238,134 @@
 
 
         </script>
+        <script>
+
+            var routeInstructionsContainer = document.getElementById('panel');
+
+            var bubble;
+            function openBubble(position, text){
+                if(!bubble){
+                    bubble =  new H.ui.InfoBubble(position,
+                        // The FO property holds the province name.
+                        {content: text});
+                        ui.addBubble(bubble);
+                } else {
+                    bubble.setPosition(position);
+                    bubble.setContent(text);
+                    bubble.open();
+                }
+            }
+
+            function addRouteShapeToMap(route, red=0, green=0, blue=255, alpha=.7){
+                var lineString = new H.geo.LineString(),
+                    routeShape = route.shape,
+                    polyline;
+
+                routeShape.forEach(function(point) {
+                    var parts = point.split(',');
+                    lineString.pushLatLngAlt(parts[0], parts[1]);
+                });
+
+                polyline = new H.map.Polyline(lineString, {
+                    style: {
+                        lineWidth: 4,
+                        strokeColor: 'rgba(' + red + ', '+ green +', '+blue+', '+alpha+')'
+                    }
+                });
+                // Add the polyline to the map
+                map.addObject(polyline);
+                // And zoom to its bounding rectangle
+                map.getViewModel().setLookAtData({
+                    bounds: polyline.getBoundingBox()
+                });
+            }
+
+            function addManueversToMap(route){
+                var svgMarkup = ' ', i, j,
+                    dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
+                    group = new  H.map.Group()
+
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        // Add a marker to the maneuvers group
+                        var marker =  new H.map.Marker({
+                            lat: maneuver.position.latitude,
+                            lng: maneuver.position.longitude} ,
+                            {icon: dotIcon});
+                        marker.instruction = maneuver.instruction;
+                        group.addObject(marker);
+                    }
+                }
+
+                group.addEventListener('tap', function (evt) {
+                    map.setCenter(evt.target.getGeometry());
+                    openBubble(
+                        evt.target.getGeometry(), evt.target.instruction);
+                    }, false);
+
+                // Add the maneuvers group to the map
+                map.addObject(group);
+            }
+
+            function addWaypointsToPanel(waypoints){
+                var nodeH3 = document.createElement('h3'),
+                    waypointLabels = [],
+                    i;
+                for (i = 0;  i < waypoints.length; i += 1) {
+                    waypointLabels.push(waypoints[i].label)
+                }
+
+                nodeH3.textContent = waypointLabels.join(' - ');
+
+                routeInstructionsContainer.innerHTML = '';
+                routeInstructionsContainer.appendChild(nodeH3);
+            }
+
+            function addSummaryToPanel(summary){
+                var summaryDiv = document.createElement('div'),
+                    content = '';
+                    content += 'Total distance: ' + summary.distance  + 'm.';
+                    content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
 
 
+                summaryDiv.style.fontSize = 'small';
+                summaryDiv.style.marginLeft ='5%';
+                summaryDiv.style.marginRight ='5%';
+                summaryDiv.innerHTML = content;
+                routeInstructionsContainer.appendChild(summaryDiv);
+            }
 
+            function addManueversToPanel(route){
+                var nodeOL = document.createElement('ol'), i, j;
 
-<script>
+                nodeOL.style.fontSize = 'small';
+                nodeOL.style.marginLeft ='5%';
+                nodeOL.style.marginRight ='5%';
+                nodeOL.className = 'directions';
 
-var routeInstructionsContainer = document.getElementById('panel');
+                // Add a marker for each maneuver
+                for (i = 0;  i < route.leg.length; i += 1) {
+                    for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
+                        // Get the next maneuver.
+                        maneuver = route.leg[i].maneuver[j];
+                        var li = document.createElement('li'),
+                            spanArrow = document.createElement('span'),
+                            spanInstruction = document.createElement('span');
 
-var bubble;
-function openBubble(position, text){
-    if(!bubble){
-        bubble =  new H.ui.InfoBubble(position,
-            // The FO property holds the province name.
-            {content: text});
-            ui.addBubble(bubble);
-    } else {
-        bubble.setPosition(position);
-        bubble.setContent(text);
-        bubble.open();
-    }
-}
+                        spanArrow.className = 'arrow '  + maneuver.action;
+                        spanInstruction.innerHTML = maneuver.instruction;
+                        li.appendChild(spanArrow);
+                        li.appendChild(spanInstruction);
 
-function addRouteShapeToMap(route){
-    var lineString = new H.geo.LineString(),
-        routeShape = route.shape,
-        polyline;
+                        nodeOL.appendChild(li);
+                    }
+                }
+                routeInstructionsContainer.appendChild(nodeOL);
+            }
 
-    routeShape.forEach(function(point) {
-        var parts = point.split(',');
-        lineString.pushLatLngAlt(parts[0], parts[1]);
-    });
-
-    polyline = new H.map.Polyline(lineString, {
-        style: {
-            lineWidth: 4,
-            strokeColor: 'rgba(0, 128, 255, 0.7)'
-        }
-    });
-    // Add the polyline to the map
-    map.addObject(polyline);
-    // And zoom to its bounding rectangle
-    map.getViewModel().setLookAtData({
-        bounds: polyline.getBoundingBox()
-    });
-}
-
-function addManueversToMap(route){
-    var svgMarkup = ' ', i, j,
-        dotIcon = new H.map.Icon(svgMarkup, {anchor: {x:8, y:8}}),
-        group = new  H.map.Group()
-
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            // Add a marker to the maneuvers group
-            var marker =  new H.map.Marker({
-                lat: maneuver.position.latitude,
-                lng: maneuver.position.longitude} ,
-                {icon: dotIcon});
-            marker.instruction = maneuver.instruction;
-            group.addObject(marker);
-        }
-    }
-
-    group.addEventListener('tap', function (evt) {
-        map.setCenter(evt.target.getGeometry());
-        openBubble(
-            evt.target.getGeometry(), evt.target.instruction);
-        }, false);
-
-    // Add the maneuvers group to the map
-    map.addObject(group);
-}
-
-function addWaypointsToPanel(waypoints){
-    var nodeH3 = document.createElement('h3'),
-        waypointLabels = [],
-        i;
-    for (i = 0;  i < waypoints.length; i += 1) {
-        waypointLabels.push(waypoints[i].label)
-    }
-
-    nodeH3.textContent = waypointLabels.join(' - ');
-
-    routeInstructionsContainer.innerHTML = '';
-    routeInstructionsContainer.appendChild(nodeH3);
-}
-
-function addSummaryToPanel(summary){
-    var summaryDiv = document.createElement('div'),
-        content = '';
-        content += 'Total distance: ' + summary.distance  + 'm.';
-        content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
-
-
-    summaryDiv.style.fontSize = 'small';
-    summaryDiv.style.marginLeft ='5%';
-    summaryDiv.style.marginRight ='5%';
-    summaryDiv.innerHTML = content;
-    routeInstructionsContainer.appendChild(summaryDiv);
-}
-
-function addManueversToPanel(route){
-    var nodeOL = document.createElement('ol'), i, j;
-
-    nodeOL.style.fontSize = 'small';
-    nodeOL.style.marginLeft ='5%';
-    nodeOL.style.marginRight ='5%';
-    nodeOL.className = 'directions';
-
-    // Add a marker for each maneuver
-    for (i = 0;  i < route.leg.length; i += 1) {
-        for (j = 0;  j < route.leg[i].maneuver.length; j += 1) {
-            // Get the next maneuver.
-            maneuver = route.leg[i].maneuver[j];
-            var li = document.createElement('li'),
-                spanArrow = document.createElement('span'),
-                spanInstruction = document.createElement('span');
-
-            spanArrow.className = 'arrow '  + maneuver.action;
-            spanInstruction.innerHTML = maneuver.instruction;
-            li.appendChild(spanArrow);
-            li.appendChild(spanInstruction);
-
-            nodeOL.appendChild(li);
-        }
-    }
-    routeInstructionsContainer.appendChild(nodeOL);
-}
-
-</script>
+        </script>
     </body>
 </html>
