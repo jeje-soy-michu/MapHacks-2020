@@ -16,24 +16,29 @@
         <div>
         <!--<div style="float:left; width: 75%; height: 100%; margin-top: 10px">Mapa</div>--> 
         <!--<img src="mapa.png" style="float:left;width:75%;height:100%;">--> 
-            <div style="float:right; width: 25%; height: 100%; margin-top: 10px; text-align: center">  
-                <form class="container-form" name="searchform">
-                    <!--<nav class="navbar navbar-expand-lg navbar-light bg-light">-->
-                    <input class="form-control-search" name="containers" id= containers type="search" placeholder="Buscar contenedor" aria-label="Search" list="container-list">
 
-                    <button class="search-container-button" type="button" onclick="searchContainer()">Buscar</button>
-
-                    <datalist id="container-list">
+            <div style="float:right; width: 25%; height: 100%;  text-align: center;">  
+                <form class="container-form" name="searchform" >
+                    <!--<nav style="background-color: #fecb00">-->
+                    <img src="medlog-logo.png" style="float:left;width:100%;height:100%;">
+                    <input style=" font-size: 110%; font-family: Arial ;text-align: center; margin-top: 20px; border: 0"class="form-control-search" name="containers" id= containers type="search" placeholder="Buscar contenedor" ; aria-label="Search" list="container-list">
+                    <div>
+                        <button style="background-color:#FED136; border: 0; font-size: 120%;font-family: Arial; margin-top: 15px;"class="search-container-button" type="button" onclick="searchContainer();">Buscar</button>
+                    </div>
+                    <div>
+                    <button style="font-size: 80%; border: 0; background-color: #FFFFFF; color: #7F8082; margin-top: 15px; font-family: Arial "type="button" onclick="clean()">Limpiar</button>
+                    </div>
+                    <datalist style="font-size: 120%; border: 0;"id="container-list">
 
                         <option id="JCLU1234564" value="JCLU1234564" data-tipo-container="40HC">
                         <option id="GCLU78901234" value="GCLU78901234" data-tipo-container="40HC">
                         <option id="JLGU1020304"value="JLGU1020304" data-tipo-container="40HC">
 
                     </datalist>
+                    <!--</nav>-->
 
+                    <div style=" margin-top: 10px"id="panel"></div>
                 </form>
-                <!--</nav>-->
-                <div id="panel"></div>
             </div>
         </div>
 
@@ -147,7 +152,14 @@
 
             function clean(){
                 map.removeObjects(map.getObjects ())
+                routeInstructionsContainer.innerHTML='';
             }
+
+            function borrar(obj) {
+                field = document.getElementById('field');
+                field.removeChild(document.getElementById(obj));
+            }
+
 
             defaultColors = {
                 red: 0,
@@ -246,6 +258,7 @@
 
                     //addWaypointsToPanel(route.waypoint);
                     //addManueversToPanel(route);
+                    
                     addSummaryToPanel(route.summary);
                     summary = route.summary;
                 }
@@ -275,8 +288,9 @@
               var truck = new H.map.Marker({lat:lat, lng:long});
               map.addObject(truck);
 
-              }
+            }
 
+           
 
             var terminal = {
                 "longitude": -0.3265983,
@@ -436,9 +450,9 @@
                         let travel = summary.travelTime * 1000;
                         let arrive = new Date(depFromSuric.getTime() + travel);
                         if(arrive.getHours() < 12){
-                            alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes() +". Proponer al cliente comenzar la carga cuanto antes.")
+                            alert("Hora de llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes() +". Proponer al cliente comenzar la carga cuanto antes.")
                         }else{
-                            alert("Llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
+                            alert("Hora de llegada estimada a las "+arrive.getHours()+":"+(arrive.getMinutes()<10?'0':'') + arrive.getMinutes()+". El camión viene con retraso.")
                         }
                         llegada = arrive;
                         colors = {
@@ -458,6 +472,8 @@
             var routeInstructionsContainer = document.getElementById('panel');
 
             var bubble;
+
+
             function openBubble(position, text){
                 if(!bubble){
                     bubble =  new H.ui.InfoBubble(position,
@@ -544,8 +560,8 @@
             function addSummaryToPanel(summary){
                 var summaryDiv = document.createElement('div'),
                     content = '';
-                    content += 'Total distance: ' + summary.distance  + 'm.';
-                    content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' (in current traffic)';
+                    content += 'Total distance: ' + summary.distance  + 'm. <br>';
+                    content += 'Travel Time: ' + summary.travelTime.toMMSS() + ' <br>(in current traffic)';
 
 
                 summaryDiv.style.fontSize = 'small';
